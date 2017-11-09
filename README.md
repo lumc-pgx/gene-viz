@@ -11,5 +11,5 @@ Python >= 2.7
 
 Installation
 ============
-pip install git+git@git.lumc.nl:wgallard/gene_viz.git
+pip install git+git@git.lumc.nl:VisualizationTools/gene_viz.git
 

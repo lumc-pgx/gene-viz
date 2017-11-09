@@ -32,6 +32,7 @@ setup(
     install_requires=[
         "bokeh",
         "pandas",
+        "webcolors"
     ],
     entry_points={
     },

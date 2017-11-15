@@ -1,5 +1,5 @@
 """
-Gene and transcript visualization
+Transcript structure visualization using Bokeh for interactive rendering
 """
 
 # bokeh
@@ -23,6 +23,7 @@ from .dataframes import (
     concat_data,
 )
 
+# pyinterval for overlap testing
 from interval import interval
 
 # defaults
@@ -32,7 +33,7 @@ from .defaults import defaults
 axis_locations = ("above", "below")
 
 
-def transcript_track_ticker():
+def zooming_ticker():
     """
     Create a composite ticker so that sensible axis values and tick intervals are used at all zoom levels
     :return: A bokeh composite ticker
@@ -111,7 +112,7 @@ class GenePlot(object):
 
 
         fig.yaxis.visible = False
-        fig.xaxis.ticker = transcript_track_ticker()
+        fig.xaxis.ticker = zooming_ticker()
         fig.xaxis.formatter = NumeralTickFormatter(format="0,0")
         fig.xgrid.grid_line_color = None
         fig.ygrid.grid_line_color = None
@@ -124,8 +125,7 @@ class GenePlot(object):
         """
         Create a dataframe for the label of a transcript
 
-        :param transcript: A pyensembl transcript object
-        :param y: The y-axis position
+        :param transcript: A Transcript object
 
         :return: A transcript_label_data_frame for the current transcript
         """
@@ -144,10 +144,9 @@ class GenePlot(object):
         """
         Create a dataframe containing the bounds of a transcript
 
-        :param transcript: A pyensembl transcript object
-        :param y: The y-axis position
+        :param transcript: A Transcript object
 
-        :return: A gene_data_frame for the current transcript
+        :return: transcript_data_frame for the current transcript
         """
         transcript_data = transcript_data_frame(1)
         y = transcript.draw_level
@@ -160,10 +159,9 @@ class GenePlot(object):
         Create dataframes for exon blocks
 
         :param transcript: The pyensembl transcript object to be drawn
-        :param y: The y-axis position of the track
 
-        :return: An pair of exon dataframes, one containing exons for a coding transcript,
-                 the other containing exons for a non-coding transcript
+        :return: An pair of exon_data_frames, one containing coding portions of exons,
+                 the other containing noncoding portions
         """
         exons = transcript.exons
         cds = transcript.cds
@@ -186,8 +184,7 @@ class GenePlot(object):
     def _get_intron_data(self, transcript):
         """
         Create a dataframe for a track of introns / strand markers
-        :param transcript: The pyensembl transcript object to be drawn
-        :param y: the y-axis position of the track
+        :param transcript: The Transcript object to be drawn
 
         :return: an intron_data_frame for the introns of transcript
         """
@@ -217,7 +214,7 @@ class GenePlot(object):
         if self._transcripts is None:
             return
 
-        self.pack(self._transcripts)
+        self.pack(self._transcripts, self.prefs.get("pack", False))
 
         num_levels = max([t.draw_level for t in self._transcripts]) + 1
         self._figure.plot_height = max(self.prefs["min_height"], self.prefs["row_height"] * (num_levels + 1) + self.prefs["axis_height"])
@@ -280,8 +277,17 @@ class GenePlot(object):
             callback_fn()
 
 
-    def pack(self, transcripts):
-        if self.prefs.get("pack", False):
+    @staticmethod
+    def pack(transcripts, packed=False):
+        """
+        Determine the vertical positions for the transcripts
+
+        :param transcripts: A list of Transcript objects
+        :param pack: a boolean indicating if transcripts should be densely packed
+                     or drawn as ordered
+        """
+        if packed:
+            # simple packing to minimize vertical space used
             sorted_t = sorted(transcripts, key=lambda x: (x.gene_id, x.size, x.start))
             packed_t = [sorted_t[0]]
             packed_t[-1].draw_level = 0
@@ -295,6 +301,7 @@ class GenePlot(object):
 
                 packed_t.append(t1)
         else:
+            # don't pack, draw in the order that transcripts are provided
             for i, t in enumerate(transcripts):
                 t.draw_level = i
 
@@ -302,7 +309,7 @@ class GenePlot(object):
 
     def link_x_range(self, other):
         """
-        Link the x-axis of this figure to the x-axis of other
+        Link the x-axis of this figure to the x-axis of another Bokeh figure
 
         :param other: a bokeh Figure
         """

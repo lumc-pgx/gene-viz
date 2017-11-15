@@ -15,25 +15,25 @@ def make_data_frame(length, column_names):
     return pd.DataFrame(columns=column_names)
 
 
-def gene_data_frame(length=None):
+def transcript_data_frame(length=None):
     """
-    A dataframe for storing gene boundaries
+    A dataframe for storing transcript boundaries
     """
     return make_data_frame(length, ("x0", "y0", "x1", "y1"))
 
 
-def gene_id_data_frame(length=None):
+def transcript_label_data_frame(length=None):
     """
     A dataframe for storing gene/transcript id information
     """
-    return make_data_frame(length, ("x0", "y0", "x1", "y1", "mid", "gene_id", "transcript_id"))
+    return make_data_frame(length, ("x0", "y0", "x1", "y1", "mid", "label"))
 
 
 def exon_data_frame(length=None):
     """
-    A dataframe for exons
+    A dataframe for exons drawn as quad blocks
     """
-    return make_data_frame(length, ("x0", "y0", "x1", "y1", "color"))
+    return make_data_frame(length, ("x0", "y0", "x1", "y1"))
 
 
 def intron_data_frame(length=None):

@@ -1,79 +1,70 @@
 """
-Gene feature definitions
+feature definitions
 """
+from interval import interval
+
+
 class Feature(object):
     """
     Base class for all features
     """
-    def __init__(self, feature_id="", children=None, start=0, end=0, strand="+"):
-        self.id = feature_id
-        self.children = children
-        self.start = start
-        self.end = end
-        self.strand = strand
-
-
-class Gene(Feature):
-    """
-    Feature representing a gene - a container of transcripts
-    """
-    def __init__(self, gene_id="", transcripts=[], start=0, end=0, strand="+"):
-        super(Gene, self).__init__(gene_id, transcripts, start, end, strand)
+    def __init__(self, contig="", start=0, end=0):
+        self.contig = contig
+        self.extents = interval[start, end]
 
     @property
-    def gene_id(self):
-        return self.id
+    def start(self):
+        return int(self.extents[0][0])
 
-    @gene_id.setter
-    def gene_id(self, value):
-        self.id = value
+    @start.setter
+    def start(self, value):
+        self.extents = interval[value, self.end]
 
     @property
-    def transcripts(self):
-        return self.children
+    def end(self):
+        return int(self.extents[0][1])
 
-    @transcripts.setter
-    def transcripts(self, value):
-        self.children = value
+    @end.setter
+    def end(self, value):
+        self.extents = interval[self.start, value]
+
+    @property
+    def size(self):
+        return self.end - self.start
+
 
 
 class Transcript(Feature):
     """
-    Feature representing a transcript - a container of exons
+    Feature representing a transcript
     """
-    def __init__(self, transcript_id="", exons=[], start=0, end=0, strand="+", gene=None):
-        super(Transcript, self).__init__(transcript_id, exons, start, end, strand)
-        self.gene = gene
+    def __init__(self, transcript_id="", gene_id="", contig="", start=0, end=0, strand="+", exons=None, cds=None):
+        super(Transcript, self).__init__(contig, start, end)
+        self.transcript_id = transcript_id
+        self.gene_id = gene_id
+        self.exons = [] if exons is None else exons
+        self.cds = [] if cds is None else cds
+        self.strand = strand
 
-    @property
-    def transcript_id(self):
-        return self.id
+    def add_exon(self, exon):
+        self.exons.append(exon)
 
-    @transcript_id.setter
-    def transcript_id(self, value):
-        self.id = value
-
-    @property
-    def gene_id(self):
-        return self.gene.gene_id
-
-    @property
-    def exons(self):
-        return self.children
+    def add_cds(self, cds):
+        self.cds.append(cds)
 
 
 class Exon(Feature):
     """
     Feature representing an exon
     """
-    def __init__(self, exon_id="", start=0, end=0, strand="+"):
-        super(Exon, self).__init__(exon_id, None, start, end, strand)
-        self.cds = None
+    def __init__(self, exon_id="", contig="", start=0, end=0):
+        super(Exon, self).__init__(contig, start, end)
+        self.exon_id = exon_id
 
-    @property
-    def exon_id(self):
-        return self.id
 
-    @exon_id.setter
-    def exon_id(self, value):
-        self.id = value
+class CDS(Feature):
+    """
+    Feature representing a coding region
+    """
+    def __init__(self, contig="", start=0, end=0):
+        super(CDS, self).__init__(contig, start, end)

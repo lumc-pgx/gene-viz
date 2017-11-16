@@ -10,6 +10,7 @@ from bokeh.models import (
     AdaptiveTicker,
     CompositeTicker,
     NumeralTickFormatter,
+    CustomJS,
 )
 
 from bokeh.plotting import figure, Figure
@@ -29,6 +30,8 @@ from interval import interval
 
 # defaults
 from .defaults import defaults
+
+from .geneplot_callbacks import x_range_callback
 
 # valid options for axis location
 axis_locations = ("above", "below")
@@ -115,6 +118,11 @@ class GenePlot(object):
         fig.yaxis.visible = False
         fig.xaxis.ticker = zooming_ticker()
         fig.xaxis.formatter = NumeralTickFormatter(format="0,0")
+        fig.x_range.callback = CustomJS(
+            args=dict(source=self._gene_data["introns"]),
+            code = x_range_callback % (self.prefs["intron_width_percent"], self.prefs["intron_marker_alpha"])
+        )
+
         fig.xgrid.grid_line_color = None
         fig.ygrid.grid_line_color = None
         fig.outline_line_alpha = 0

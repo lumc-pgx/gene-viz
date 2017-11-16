@@ -153,13 +153,6 @@ class GenePlot(object):
         elif self.prefs["label_horiz_position"] == "right":
             x = transcript.end
 
-        offset_h_factor = self.prefs["label_scale_factor"] * (self.x_range.end - self.x_range.start)
-        offset_x = self.prefs["label_offset"][0] * offset_h_factor
-        offset_y = self.prefs["label_offset"][1]
-
-        x += offset_x
-        y -= offset_y
-
         id_data.loc[0] = [x, y, label]
 
         return id_data
@@ -261,6 +254,8 @@ class GenePlot(object):
         self._figure.y_range.start, self._figure.y_range.end = (range_end, range_start)
 
         self._labels.glyph.text_align = self.prefs["label_justify"]
+        self._labels.glyph.x_offset = self.prefs["label_offset"][0]
+        self._labels.glyph.y_offset = -self.prefs["label_offset"][1]
 
         transcript_data = []
         exon_data_coding = []

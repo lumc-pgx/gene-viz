@@ -26,7 +26,7 @@ def transcript_label_data_frame(length=None):
     """
     A dataframe for storing gene/transcript id information
     """
-    return make_data_frame(length, ("x0", "y0", "x1", "y1", "mid", "label"))
+    return make_data_frame(length, ("x", "y", "label"))
 
 
 def exon_data_frame(length=None):

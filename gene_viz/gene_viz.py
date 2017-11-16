@@ -1,6 +1,7 @@
 """
 Transcript structure visualization using Bokeh for interactive rendering
 """
+from copy import deepcopy
 
 # bokeh
 from bokeh.models import (
@@ -62,7 +63,7 @@ class GenePlot(object):
         )
 
         # preferences
-        self._prefs = defaults
+        self._prefs = deepcopy(defaults)
         self._prefs.update(prefs)
 
         # the transcript data from the database
@@ -85,7 +86,7 @@ class GenePlot(object):
     def _create_plot(self):
         fig = figure(width=800, height=100, tools=["xpan, xwheel_zoom, xbox_zoom, save, reset"],
                      active_scroll="xwheel_zoom",
-                     toolbar_location=None, logo=None, x_axis_location=self.prefs["axis_location"],
+                     toolbar_location="right", logo=None, x_axis_location=self.prefs["axis_location"],
                      x_range = (0,1), y_range=(-1, 1))
 
         # transcript center line
@@ -107,9 +108,9 @@ class GenePlot(object):
                  source=self._gene_data["noncoding_exons"], name="noncoding_exons")
 
         # transcript labels
-        fig.text(x="x1", y="mid", text="label", text_font_size=self.prefs["label_font_size"], text_align="right", text_baseline="middle",
-                 source=self._gene_data["labels"], text_font=self.prefs["label_font"], name="transcript_labels")
-
+        self._labels = fig.text(x="x", y="y", text="label", text_font_size=self.prefs["label_font_size"],
+                                text_align="center", text_baseline="middle", source=self._gene_data["labels"],
+                                text_font=self.prefs["label_font"], name="transcript_labels")
 
         fig.yaxis.visible = False
         fig.xaxis.ticker = zooming_ticker()
@@ -121,6 +122,13 @@ class GenePlot(object):
         return fig
 
 
+    def _get_transcript_y(self, transcript):
+        y = transcript.draw_level
+        if self.prefs["label_vert_position"] in ("above", "below"):
+            y *= 2
+        return y
+
+
     def _get_label_data(self, transcript):
         """
         Create a dataframe for the label of a transcript
@@ -130,12 +138,29 @@ class GenePlot(object):
         :return: A transcript_label_data_frame for the current transcript
         """
         id_data = transcript_label_data_frame(1)
-        transcript_id = transcript.transcript_id
-        length = self.prefs["label_scale_factor"] * (len(transcript_id) + 1) * (self.x_range.end - self.x_range.start)
-        y = transcript.draw_level
+        label = transcript.transcript_id
 
-        id_data.loc[0] = [transcript.start - length - 1, y - self.prefs["transcript_height"] / 2,
-                          transcript.start - 1, y + self.prefs["transcript_height"] / 2, y, "{} ".format(transcript_id)]
+        y = self._get_transcript_y(transcript)
+        x = (transcript.start + transcript.end) / 2
+
+        if self.prefs["label_vert_position"] == "above":
+            y -= 1
+        elif self.prefs["label_vert_position"] == "below":
+            y += 1
+
+        if self.prefs["label_horiz_position"] == "left":
+            x = transcript.start - 1
+        elif self.prefs["label_horiz_position"] == "right":
+            x = transcript.end
+
+        offset_h_factor = self.prefs["label_scale_factor"] * (self.x_range.end - self.x_range.start)
+        offset_x = self.prefs["label_offset"][0] * offset_h_factor
+        offset_y = self.prefs["label_offset"][1]
+
+        x += offset_x
+        y -= offset_y
+
+        id_data.loc[0] = [x, y, label]
 
         return id_data
 
@@ -149,7 +174,7 @@ class GenePlot(object):
         :return: transcript_data_frame for the current transcript
         """
         transcript_data = transcript_data_frame(1)
-        y = transcript.draw_level
+        y = self._get_transcript_y(transcript)
         transcript_data.loc[0] = [transcript.start - 1, y, transcript.end, y]
         return transcript_data
 
@@ -169,7 +194,7 @@ class GenePlot(object):
         coding_exon_half_height = self.prefs["coding_exon_height"] / 2
         noncoding_exon_half_height = self.prefs["noncoding_exon_height"] / 2
 
-        y = transcript.draw_level
+        y = self._get_transcript_y(transcript)
         exon_data = exon_data_frame(len(exons))
         for i, exon in enumerate(exons):
             exon_data.loc[i] = [exon.start - 1, y - noncoding_exon_half_height, exon.end, y + noncoding_exon_half_height]
@@ -196,7 +221,7 @@ class GenePlot(object):
 
         intron_width = self.prefs["intron_width_percent"] * (self.x_range.end - self.x_range.start)
 
-        y = transcript.draw_level
+        y = self._get_transcript_y(transcript)
 
         for exon in exons:
             if exon is not exons[-1]:
@@ -216,9 +241,26 @@ class GenePlot(object):
 
         self.pack(self._transcripts, self.prefs.get("pack", False))
 
-        num_levels = max([t.draw_level for t in self._transcripts]) + 1
+        num_levels = max([t.draw_level for t in self._transcripts])
+
+        if self.prefs["label_vert_position"] in ("above", "below"):
+            num_levels *= 2
+
+        num_levels += 1
+
         self._figure.plot_height = max(self.prefs["min_height"], self.prefs["row_height"] * (num_levels + 1) + self.prefs["axis_height"])
-        self._figure.y_range.start, self._figure.y_range.end = (num_levels, -1)
+
+        range_start = -1
+        range_end = num_levels
+
+        if self.prefs["label_vert_position"] == "above":
+            range_start -= 0.5
+        elif self.prefs["label_vert_position"] == "below":
+            range_end += 1
+
+        self._figure.y_range.start, self._figure.y_range.end = (range_end, range_start)
+
+        self._labels.glyph.text_align = self.prefs["label_justify"]
 
         transcript_data = []
         exon_data_coding = []

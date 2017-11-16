@@ -330,7 +330,7 @@ class GenePlot(object):
         """
         if packed:
             # simple packing to minimize vertical space used
-            sorted_t = sorted(transcripts, key=lambda x: (x.gene_id, x.size, x.start))
+            sorted_t = sorted(transcripts, key=lambda x: (x.size, x.start))
             packed_t = [sorted_t[0]]
             packed_t[-1].draw_level = 0
 

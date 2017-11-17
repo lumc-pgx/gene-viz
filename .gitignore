@@ -1,3 +1,7 @@
 .idea/
 *.egg-info/
 */__pycache__/
+*/.ipynb_checkpoints/
+*.gtf.gz
+*.sqlite
+*/pyensembl/

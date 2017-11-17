@@ -59,8 +59,9 @@ class GenePlot(object):
         # dictionary to hold the dataframes to be rendered
         self._gene_data = dict(
             transcripts=CDS(self._placeholder()),
-            coding_exons=CDS(exon_data_frame()),
-            noncoding_exons=CDS(exon_data_frame()),
+            #coding_exons=CDS(exon_data_frame()),
+            #noncoding_exons=CDS(exon_data_frame()),
+            exons=CDS(exon_data_frame()),
             introns=CDS(intron_data_frame()),
             labels=CDS(transcript_label_data_frame())
         )
@@ -102,13 +103,9 @@ class GenePlot(object):
                  text_font_style="bold", text_alpha="alpha", text_font_size=self.prefs["intron_marker_size"],
                  source=self._gene_data["introns"], name="introns")
 
-        # coding exons
-        fig.quad(left="x0", bottom="y0", right="x1", top="y1", color=self.prefs["exon_color"],
-                 source=self._gene_data["coding_exons"], name="coding_exons")
-
-        # non-coding exons
-        fig.quad(left="x0", bottom="y0", right="x1", top="y1", color=self.prefs["exon_color"],
-                 source=self._gene_data["noncoding_exons"], name="noncoding_exons")
+        # exons
+        fig.patches(xs="x", ys="y", fill_color=self.prefs["exon_color"], line_color=self.prefs["exon_outline_color"],
+                    line_width=self.prefs["exon_outline_width"], source=self._gene_data["exons"], name="exons")
 
         # transcript labels
         self._labels = fig.text(x="x", y="y", text="label", text_font_size=self.prefs["label_font_size"],
@@ -186,8 +183,7 @@ class GenePlot(object):
 
         :param transcript: The pyensembl transcript object to be drawn
 
-        :return: An pair of exon_data_frames, one containing coding portions of exons,
-                 the other containing noncoding portions
+        :return: An exon_data_frame for the current transcript
         """
         exons = transcript.exons
         cds = transcript.cds
@@ -196,15 +192,44 @@ class GenePlot(object):
         noncoding_exon_half_height = self.prefs["noncoding_exon_height"] / 2
 
         y = self._get_transcript_y(transcript)
+
+        cds_intervals = interval()
+        for c in cds:
+            cds_intervals |= interval[c.start, c.end]
+
         exon_data = exon_data_frame(len(exons))
+
         for i, exon in enumerate(exons):
-            exon_data.loc[i] = [exon.start - 1, y - noncoding_exon_half_height, exon.end, y + noncoding_exon_half_height]
+            exon_interval = interval[exon.start, exon.end]
+            intersection = exon_interval & cds_intervals
 
-        cds_data = exon_data_frame(len(cds))
-        for i, c in enumerate(cds):
-            cds_data.loc[i] = [c.start - 1, y - coding_exon_half_height, c.end, y + coding_exon_half_height]
+            if len(intersection) > 0:
+                cds = intersection[0]
 
-        return cds_data, exon_data
+                vertices = [(exon.start, noncoding_exon_half_height),
+                            (int(cds[0]), noncoding_exon_half_height),
+                            (int(cds[0]), coding_exon_half_height),
+                            (int(cds[1]), coding_exon_half_height),
+                            (int(cds[1]), noncoding_exon_half_height),
+                            (exon.end, noncoding_exon_half_height)]
+            else:
+                vertices = [(exon.start, noncoding_exon_half_height),
+                            (exon.end, noncoding_exon_half_height)]
+
+            if vertices[0][0] == vertices[1][0]:
+               vertices = vertices[2:]
+
+            if vertices[-2][0] == vertices[-1][0]:
+               vertices = vertices[:-2]
+
+            vertices += [(v[0], -v[1]) for v in vertices[::-1]]
+
+            xs = [v[0] for v in vertices]
+            ys = [y + v[1] for v in vertices]
+
+            exon_data.loc[i] = [xs, ys]
+
+        return exon_data
 
 
     def _get_intron_data(self, transcript):
@@ -266,8 +291,7 @@ class GenePlot(object):
         self._labels.glyph.y_offset = -self.prefs["label_offset"][1]
 
         transcript_data = []
-        exon_data_coding = []
-        exon_data_noncoding = []
+        exon_data = []
         intron_data = []
         label_data = []
 
@@ -286,13 +310,9 @@ class GenePlot(object):
                 )
 
                 # exons
-                exons_coding, exons_noncoding = self._get_exon_data(transcript)
                 append_data(
-                    exons_coding, exon_data_coding
-                )
-
-                append_data(
-                    exons_noncoding, exon_data_noncoding
+                    self._get_exon_data(transcript),
+                    exon_data
                 )
 
                 # introns / strand direction markers
@@ -307,8 +327,7 @@ class GenePlot(object):
         # update graph sources with new data
         if self._dirty_flag:
             self._gene_data["transcripts"].data = CDS.from_df(concat_data(transcript_data, transcript_data_frame))
-            self._gene_data["coding_exons"].data = CDS.from_df(concat_data(exon_data_coding, exon_data_frame))
-            self._gene_data["noncoding_exons"].data = CDS.from_df(concat_data(exon_data_noncoding, exon_data_frame))
+            self._gene_data["exons"].data = CDS.from_df(concat_data(exon_data, exon_data_frame))
             self._gene_data["introns"].data = CDS.from_df(concat_data(intron_data, intron_data_frame))
             if self.prefs["show_labels"]:
                 self._gene_data["labels"].data = CDS.from_df(concat_data(label_data, transcript_label_data_frame))

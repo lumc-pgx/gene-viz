@@ -31,9 +31,9 @@ def transcript_label_data_frame(length=None):
 
 def exon_data_frame(length=None):
     """
-    A dataframe for exons drawn as quad blocks
+    A dataframe for exons drawn as patches
     """
-    return make_data_frame(length, ("x0", "y0", "x1", "y1"))
+    return make_data_frame(length, ("x", "y"))
 
 
 def intron_data_frame(length=None):

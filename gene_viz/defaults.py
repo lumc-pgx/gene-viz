@@ -9,6 +9,8 @@ defaults = dict(
     min_height=50,
 
     exon_color = "DarkBlue",
+    exon_outline_color = None,
+    exon_outline_width = 1,
     coding_exon_height = 0.7,
     noncoding_exon_height = 0.35,
 

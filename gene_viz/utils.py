@@ -2,6 +2,7 @@
 Utilities and helpers
 """
 
+import sys
 from .features import Transcript, Exon, CDS
 
 
@@ -22,6 +23,15 @@ def transcripts_from_gffutils(db, contig, start, end):
     """
     transcript_list = []
 
+    try:
+        import gffutils
+        always_return_list = gffutils.constants.always_return_list
+    except ImportError:
+        print("Unable to import gff_utils", file=sys.stderr)
+        raise
+
+    gffutils.constants.always_return_list = False
+
     for gene in db.features_of_type("gene", limit=(contig, start, end)):
         transcripts = db.children(gene.id, featuretype="transcript")
         for transcript in transcripts:
@@ -37,6 +47,8 @@ def transcripts_from_gffutils(db, contig, start, end):
                 t.add_cds(CDS(cds.seqid, cds.start, cds.end))
 
             transcript_list.append(t)
+
+    gffutils.constants.always_return_list = always_return_list
 
     return transcript_list
 

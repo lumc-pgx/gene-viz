@@ -173,7 +173,7 @@ class GenePlot(object):
         """
         transcript_data = transcript_data_frame(1)
         y = self._get_transcript_y(transcript)
-        transcript_data.loc[0] = [transcript.start - 1, y, transcript.end, y]
+        transcript_data.loc[0] = [transcript.start, y, transcript.end, y]
         return transcript_data
 
 

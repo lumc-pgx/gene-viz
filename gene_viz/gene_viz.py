@@ -278,7 +278,10 @@ class GenePlot(object):
 
         self.pack(self._transcripts, self.prefs.get("pack", False))
 
-        num_levels = max([t.draw_level for t in self._transcripts])
+        try:
+            num_levels = max([t.draw_level for t in self._transcripts])
+        except ValueError:
+            num_levels = 0
 
         if self.prefs["label_vert_position"] in ("above", "below"):
             num_levels *= 2

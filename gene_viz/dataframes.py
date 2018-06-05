@@ -33,7 +33,7 @@ def exon_data_frame(length=None):
     """
     A dataframe for exons drawn as patches
     """
-    return make_data_frame(length, ("x", "y"))
+    return make_data_frame(length, ("x", "y", "color"))
 
 
 def intron_data_frame(length=None):

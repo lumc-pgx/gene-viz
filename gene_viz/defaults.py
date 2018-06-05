@@ -37,4 +37,10 @@ defaults = dict(
     label_font_size = "7pt",
 
     pack = False,
+
+    # functions can be provided to for custom formatting
+    # labels
+    label_func = False,
+    # per-exon colors
+    exon_color_func = False
 )

@@ -35,7 +35,7 @@ def transcripts_from_gffutils(db, contig, start, end):
     for gene in db.features_of_type("gene", limit=(contig, start, end)):
         transcripts = db.children(gene.id, featuretype="transcript")
         for transcript in transcripts:
-            t = Transcript(transcript.attributes["transcript_name"], gene.attributes["gene_name"],
+            t = Transcript(transcript.attributes["transcript_id"], gene.attributes["gene_id"],
                            transcript.seqid, transcript.start, transcript.end, transcript.strand)
 
             exons = db.children(transcript.id, featuretype="exon")

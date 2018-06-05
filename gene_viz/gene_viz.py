@@ -104,7 +104,7 @@ class GenePlot(object):
                  source=self._gene_data["introns"], name="introns")
 
         # exons
-        fig.patches(xs="x", ys="y", fill_color=self.prefs["exon_color"], line_color=self.prefs["exon_outline_color"],
+        fig.patches(xs="x", ys="y", fill_color="color", line_color=self.prefs["exon_outline_color"],
                     line_width=self.prefs["exon_outline_width"], source=self._gene_data["exons"], name="exons")
 
         # transcript labels
@@ -143,7 +143,12 @@ class GenePlot(object):
         :return: A transcript_label_data_frame for the current transcript
         """
         id_data = transcript_label_data_frame(1)
-        label = transcript.transcript_id
+        
+        label_func = self._prefs.get("label_func", False)
+        if label_func:
+            label = label_func(transcript)
+        else:
+            label = transcript.transcript_id
 
         y = self._get_transcript_y(transcript)
         x = (transcript.start + transcript.end) / 2
@@ -227,7 +232,13 @@ class GenePlot(object):
             xs = [v[0] for v in vertices]
             ys = [y + v[1] for v in vertices]
 
-            exon_data.loc[i] = [xs, ys]
+            color_func = self._prefs.get("exon_color_func", False)
+            if color_func:
+                color = color_func(exon)
+            else:
+                color = self.prefs["exon_color"]
+            
+            exon_data.loc[i] = [xs, ys, color]
 
         return exon_data
 
@@ -350,6 +361,9 @@ class GenePlot(object):
         :param pack: a boolean indicating if transcripts should be densely packed
                      or drawn as ordered
         """
+        if len(transcripts) == 0:
+            return
+            
         if packed:
             # simple packing to minimize vertical space used
             sorted_t = sorted(transcripts, key=lambda x: (x.size, x.start))

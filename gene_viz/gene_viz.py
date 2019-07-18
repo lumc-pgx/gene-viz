@@ -90,7 +90,7 @@ class GenePlot(object):
     def _create_plot(self):
         fig = figure(width=800, height=100, tools=["xpan, xwheel_zoom, xbox_zoom, save, reset"],
                      active_scroll="xwheel_zoom",
-                     toolbar_location="right", logo=None, x_axis_location=self.prefs["axis_location"],
+                     toolbar_location=self.prefs["toolbar_location"], x_axis_location=self.prefs["axis_location"],
                      x_range = (0,1), y_range=(-1, 1))
 
         # transcript center line

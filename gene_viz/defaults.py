@@ -4,6 +4,7 @@ defaults for visualization parameters
 
 defaults = dict(
     axis_location = "below",
+    toolbar_location = "right",
     axis_height=35,
     row_height=12,
     min_height=50,
